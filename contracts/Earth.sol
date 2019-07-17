@@ -20,6 +20,36 @@ contract Earth {
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
   uint256 constant MAX_GOE_PAYOUT = 600000000000000000;    // 60 cents
   
+  uint256 constant CO2_TO_GOELLARS_FACTOR = 1000;
+  uint256 constant LOW_TO_HIGH_FACTOR = 4;
+
+  function getGoellars(bool isDefectA, bool isDefectB, uint256 lowCO2) internal view returns (uint256) {
+    if (isDefectA) {
+      if (isDefectB) {
+        return (lowCO2 / CO2_TO_GOELLARS_FACTOR);
+      } else {
+        return (lowCO2 / CO2_TO_GOELLARS_FACTOR) * LOW_TO_HIGH_FACTOR;
+      }
+    } else {
+      if (isDefectB) {
+        return (lowCO2 / CO2_TO_GOELLARS_FACTOR) * LOW_TO_HIGH_FACTOR;
+      } else {
+        return (lowCO2 / CO2_TO_GOELLARS_FACTOR);
+      }
+    }
+  }
+
+  function getCo2B(bool isDefectB, uint256 lowCO2) internal view returns (uint256) {
+    if (isDefectB) {
+      return lowCO2 * LOW_TO_HIGH_FACTOR;
+    } else {
+      return lowCO2;
+    }
+  }
+
+  // (CO2mintedBefore - CO2mintedAfter) = co2Amount
+  // (CO2lockedBefore - CO2lockedAfter) > 0 ? collaborate : defect
+  // 
   function trade(
     uint256 passportA,
     bytes32 passDataAfter, 
@@ -31,23 +61,30 @@ contract Earth {
     // calculate payout for A
     // sender can up to a bound decide the size of the emission
     IERC1948 countryA = IERC1948(countryAaddr);
-    uint256 emission = (uint256(uint32(uint256(passDataAfter))) - uint256(uint32(uint256(countryA.readData(passportA))))) * PASSPORT_FACTOR;
-    require(emission <= MAX_CO2_EMISSION, "invalid emission");
+    bytes32 passDataBefore = countryA.readData(passportA);
+    uint256 lowCO2 = uint256(uint32(uint256(passDataAfter)) - uint32(uint256(passDataBefore)));
+    bool isDefectA = false;
+
+    if ((uint256(passDataAfter) - uint256(passDataBefore) == lowCO2) {
+      // if CO2locked unchanged, then consider defect by player 1
+      lowCO2 = lowCO2 / LOW_TO_HIGH_FACTOR;
+      isDefectA = true;
+    }
 
     // pay out trade        
     IERC20 dai = IERC20(DAI);
-    dai.transfer(countryA.ownerOf(passportA), MAX_GOE_PAYOUT * emission / MAX_CO2_EMISSION);
+    dai.transfer(countryA.ownerOf(passportA), getGoellars(isDefectA, isDefectB, lowCO2));
     IERC1948 countryB = IERC1948(countryBaddr);
-    dai.transfer(countryB.ownerOf(passportB), MAX_GOE_PAYOUT * emission / MAX_CO2_EMISSION);
+    dai.transfer(countryB.ownerOf(passportB), getGoellars(isDefectA, isDefectB, lowCO2));
     
     // update passports
     countryA.writeDataByReceipt(passportA, passDataAfter, sigA);
     bytes32 dataB = countryB.readData(passportB);
-    countryB.writeData(passportB, bytes32(uint256(dataB) + uint256(emission / PASSPORT_FACTOR)));
+    countryB.writeData(passportB, bytes32(uint256(dataB) + getCo2B(isDefectB, lowCO2)));
 
-    // // emit CO2
+    // emit CO2
     IERC20 co2 = IERC20(CO2);
-    co2.transfer(AIR_ADDR, emission * 2);
+    co2.transfer(AIR_ADDR, getCo2B(isDefectB, lowCO2) + uint256(uint32(uint256(passDataAfter)) - uint32(uint256(passDataBefore))));
   }
 
   // account used as game master.
