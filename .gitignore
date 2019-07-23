@@ -20,7 +20,6 @@ node_modules
 
 # Debug log from npm
 npm-debug.log
-package-lock.json
 
 # local env variables
 .env
@@ -31,4 +30,6 @@ build/
 # lol macs
 .DS_Store/
 .DS_Store
-yarn.lock
+
+Air.json
+Earth.json
