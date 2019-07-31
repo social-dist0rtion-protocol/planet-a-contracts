@@ -9,16 +9,12 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./IERC1948.sol";
 
 contract Earth {
-
-  address constant CO2 = 0x1231111111111111111111111111111111111123;
-  address constant DAI = 0x2341111111111111111111111111111111111234;
-  // CO2 flows from Earth to Air and maybe back. This is the address of the
-  // air contract.
+  address constant CO2_ADDR = 0x1231111111111111111111111111111111111123;
+  address constant DAI_ADDR = 0x2341111111111111111111111111111111111234;
   address constant AIR_ADDR = 0x4561111111111111111111111111111111111456;
 
   uint256 constant MAX_CO2_EMISSION = 25000000000000000000; // 25 gigatonnes
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
-  uint256 constant MAX_GOE_PAYOUT = 600000000000000000;    // 60 cents
   
   uint256 constant CO2_TO_GOELLARS_FACTOR = 1000;
   uint256 constant LOW_TO_HIGH_FACTOR = 4;
@@ -53,8 +49,8 @@ contract Earth {
       co2: 0
     });
 
-    IERC20 dai = IERC20(DAI);
-    IERC20 co2 = IERC20(CO2);
+    IERC20 dai = IERC20(DAI_ADDR);
+    IERC20 co2 = IERC20(CO2_ADDR);
 
     // calculate payout for A
     uint256 lowCO2 = uint256(uint32(uint256(passDataAfter)) - uint32(uint256(citizenA.dataBefore)));
@@ -91,14 +87,14 @@ contract Earth {
   function unlockCO2(uint256 amount, uint8 v, bytes32 r, bytes32 s) public {
     require(ecrecover(bytes32(uint256(uint160(address(this))) | amount << 160), v, r, s) == GAME_MASTER, "signer does not match");
     // unlock CO2
-    IERC20(CO2).transfer(AIR_ADDR, amount);
+    IERC20(CO2_ADDR).transfer(AIR_ADDR, amount);
   }
 
   // used to combine multiple contract UTXOs into one.
   function consolidate(uint8 v, bytes32 r, bytes32 s) public {
     require(ecrecover(bytes32(bytes20(address(this))), v, r, s) == GAME_MASTER, "signer does not match");
     // lock CO2
-    IERC20 co2 = IERC20(CO2);
+    IERC20 co2 = IERC20(CO2_ADDR);
     co2.transfer(address(this), co2.balanceOf(address(this)));
   }
 }

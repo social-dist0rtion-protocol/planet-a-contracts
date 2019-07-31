@@ -25,7 +25,7 @@ contract('Earth Contract', (accounts) => {
   const air = accounts[3];
   const citizenAPriv = '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201';
   const dataBefore = '0000000000000000000000000000000000000000000000000000000000000000';
-  const dataAfter = '0000000000000000000000000000000000000000000000000000000000001f40';
+  const dataAfter = '0000000000000000000000000000000000000000000000000000000000001388';
   const passportA = 123;
   const passportB = 234;
   const totalCo2 = '10000000000000000000000';
@@ -46,6 +46,163 @@ contract('Earth Contract', (accounts) => {
 
   afterEach(() => {
     Earth._json.bytecode = originalByteCode;
+  });
+
+  it('should allow to shake, both collaborate', async () => {
+
+    // deploy earth
+    let tmp = Earth._json.bytecode;
+    // replace token address placeholder to real token address
+    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
+    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
+    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
+    Earth._json.bytecode = tmp;
+    const earth = await Earth.new();
+
+    // fund earth
+    await goellars.transfer(earth.address, '500000000000000000000');
+    await co2.transfer(earth.address, totalCo2);
+
+    // print passports for citizens
+    await countryA.mint(citizenA, passportA);
+    await countryB.mint(citizenB, passportB);
+
+    // citizen A sharing signed receipt through QR code
+    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000100001388';
+    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
+    const sig = ethUtil.ecsign(
+      hash,
+      Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
+    );
+    // citizen B signing transaction
+    await countryB.approve(earth.address, passportB, {from: citizenB});
+
+    // citizen B collaborates
+    await goellars.approve(earth.address, 1, {from: citizenB});
+
+    // sending transaction
+    const tx = await earth.trade(
+      passportA,           // uint256 passportA,
+      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
+      `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
+      passportB,           // uint256 passportB,
+      countryA.address,    // NFT contract 
+      countryB.address,    // NFT contract 
+    ).should.be.fulfilled;
+
+    // check result when citizen A collaborates and citizen B collaborates
+    const emission = await co2.balanceOf(air);
+    assert.equal(emission.toString(10), '10000000000000000000'); // low CO2 + low CO2 = 10 GigaTons
+    const balanceA = await goellars.balanceOf(citizenA);
+    assert.equal(balanceA.toString(10), '5000000000000000'); // low $ = 5 cents
+    const balanceB = await goellars.balanceOf(citizenB);
+    assert.equal(balanceB.toString(10), '5000000000000000'); // low $ = 5 cents
+    const passA = await countryA.readData(passportA);
+    assert.equal(passA, `0x${dataAfterColaborate}`);
+  });
+
+
+  it('should allow to shake, citizen B defect', async () => {
+
+    // deploy earth
+    let tmp = Earth._json.bytecode;
+    // replace token address placeholder to real token address
+    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
+    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
+    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
+    Earth._json.bytecode = tmp;
+    const earth = await Earth.new();
+
+    // fund earth
+    await goellars.transfer(earth.address, '500000000000000000000');
+    await co2.transfer(earth.address, totalCo2);
+
+    // print passports for citizens
+    await countryA.mint(citizenA, passportA);
+    await countryB.mint(citizenB, passportB);
+
+    // citizen A sharing signed receipt through QR code
+    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000100001388';
+    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
+    const sig = ethUtil.ecsign(
+      hash,
+      Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
+    );
+    // citizen B signing transaction
+    await countryB.approve(earth.address, passportB, {from: citizenB});
+
+    // sending transaction
+    const tx = await earth.trade(
+      passportA,           // uint256 passportA,
+      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
+      `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
+      passportB,           // uint256 passportB,
+      countryA.address,    // NFT contract 
+      countryB.address,    // NFT contract 
+    ).should.be.fulfilled;
+
+    // check result when citizen A collaborates and citizen B defects
+    const emission = await co2.balanceOf(air);
+    assert.equal(emission.toString(10), '25000000000000000000'); // low CO2 + high CO2 = 25 GigaTons
+    const balanceA = await goellars.balanceOf(citizenA);
+    assert.equal(balanceA.toString(10), '20000000000000000'); // high $ = 20 cents
+    const balanceB = await goellars.balanceOf(citizenB);
+    assert.equal(balanceB.toString(10), '20000000000000000'); // high $ = 20 cents
+    const passA = await countryA.readData(passportA);
+    assert.equal(passA, `0x${dataAfterColaborate}`);
+  });
+
+  it('should allow to shake, citizen A defect', async () => {
+
+    // deploy earth
+    let tmp = Earth._json.bytecode;
+    // replace token address placeholder to real token address
+    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
+    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
+    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
+    Earth._json.bytecode = tmp;
+    const earth = await Earth.new();
+
+    // fund earth
+    await goellars.transfer(earth.address, '500000000000000000000');
+    await co2.transfer(earth.address, totalCo2);
+
+    // print passports for citizens
+    await countryA.mint(citizenA, passportA);
+    await countryB.mint(citizenB, passportB);
+
+    // citizen A sharing signed receipt through QR code
+    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000000004e20';
+    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterDefect, 'hex'));
+    const sig = ethUtil.ecsign(
+      hash,
+      Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
+    );
+    // citizen B signing transaction
+    await countryB.approve(earth.address, passportB, {from: citizenB});
+
+    // citizen B collaborates
+    await goellars.approve(earth.address, 1, {from: citizenB});
+
+    // sending transaction
+    const tx = await earth.trade(
+      passportA,           // uint256 passportA,
+      `0x${dataAfterDefect}`,      // bytes32 passDataAfter, 
+      `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
+      passportB,           // uint256 passportB,
+      countryA.address,    // NFT contract 
+      countryB.address,    // NFT contract 
+    ).should.be.fulfilled;
+
+    // check result when citizen A defects and citizen B collaborates ?!?!?!
+    const emission = await co2.balanceOf(air);
+    assert.equal(emission.toString(10), '25000000000000000000'); // high CO2 + low CO2 = 25 Gigatons
+    const balanceA = await goellars.balanceOf(citizenA);
+    assert.equal(balanceA.toString(10), '20000000000000000'); // high $ = 20 cents
+    const balanceB = await goellars.balanceOf(citizenB);
+    assert.equal(balanceB.toString(10), '20000000000000000'); // high $ = 20 cents
+    const passA = await countryA.readData(passportA);
+    assert.equal(passA, `0x${dataAfterDefect}`);
   });
 
   it('should allow to shake, both defect', async () => {
@@ -78,7 +235,8 @@ contract('Earth Contract', (accounts) => {
     await countryB.mint(citizenB, passportB);
 
     // citizen A sharing signed receipt through QR code
-    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfter, 'hex'));
+    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000000004e20';
+    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterDefect, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
       Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
@@ -89,177 +247,22 @@ contract('Earth Contract', (accounts) => {
     // sending transaction
     const tx = await earth.trade(
       passportA,           // uint256 passportA,
-      `0x${dataAfter}`,      // bytes32 passDataAfter, 
+      `0x${dataAfterDefect}`,      // bytes32 passDataAfter, 
       `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
       passportB,           // uint256 passportB,
       countryA.address,    // NFT contract 
       countryB.address,    // NFT contract 
     ).should.be.fulfilled;
 
-    // check result
+    // check result when citizen A defects and citizen B defects
     const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '16000000000000000000');
+    assert.equal(emission.toString(10), '40000000000000000000'); // high CO2 + high CO2 = 40 GigaTonnes
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '2000000000000000');
+    assert.equal(balanceA.toString(10), '5000000000000000'); // low $ = 5 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '2000000000000000');
+    assert.equal(balanceB.toString(10), '5000000000000000'); // low $ = 5 cents
     const passA = await countryA.readData(passportA);
-    assert.equal(passA, `0x${dataAfter}`);
-  });
-
-  it('should allow to shake, citizen A defect', async () => {
-
-    // deploy earth
-    let tmp = Earth._json.bytecode;
-    // replace token address placeholder to real token address
-    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
-    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
-    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
-    Earth._json.bytecode = tmp;
-    const earth = await Earth.new();
-
-    // fund earth
-    await goellars.transfer(earth.address, '500000000000000000000');
-    await co2.transfer(earth.address, totalCo2);
-
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
-    // citizen A sharing signed receipt through QR code
-    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfter, 'hex'));
-    const sig = ethUtil.ecsign(
-      hash,
-      Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
-    );
-    // citizen B signing transaction
-    await countryB.approve(earth.address, passportB, {from: citizenB});
-
-    // citizen B collaborates
-    await goellars.approve(earth.address, 1, {from: citizenB});
-
-    // sending transaction
-    const tx = await earth.trade(
-      passportA,           // uint256 passportA,
-      `0x${dataAfter}`,      // bytes32 passDataAfter, 
-      `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
-      passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
-    ).should.be.fulfilled;
-
-    // check result
-    const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '10000000000000000000');
-    const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '8000000000000000');
-    const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '8000000000000000');
-    const passA = await countryA.readData(passportA);
-    assert.equal(passA, `0x${dataAfter}`);
-  });
-
-  it('should allow to shake, citizen B defect', async () => {
-
-    // deploy earth
-    let tmp = Earth._json.bytecode;
-    // replace token address placeholder to real token address
-    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
-    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
-    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
-    Earth._json.bytecode = tmp;
-    const earth = await Earth.new();
-
-    // fund earth
-    await goellars.transfer(earth.address, '500000000000000000000');
-    await co2.transfer(earth.address, totalCo2);
-
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
-    // citizen A sharing signed receipt through QR code
-    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000100001f40';
-    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
-    const sig = ethUtil.ecsign(
-      hash,
-      Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
-    );
-    // citizen B signing transaction
-    await countryB.approve(earth.address, passportB, {from: citizenB});
-
-    // sending transaction
-    const tx = await earth.trade(
-      passportA,           // uint256 passportA,
-      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
-      `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
-      passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
-    ).should.be.fulfilled;
-
-    // check result
-    const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '40000000000000000000');
-    const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '32000000000000000');
-    const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '32000000000000000');
-    const passA = await countryA.readData(passportA);
-    assert.equal(passA, `0x${dataAfterColaborate}`);
-  });
-
-  it('should allow to shake, both collaborate', async () => {
-
-    // deploy earth
-    let tmp = Earth._json.bytecode;
-    // replace token address placeholder to real token address
-    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
-    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
-    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
-    Earth._json.bytecode = tmp;
-    const earth = await Earth.new();
-
-    // fund earth
-    await goellars.transfer(earth.address, '500000000000000000000');
-    await co2.transfer(earth.address, totalCo2);
-
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
-    // citizen A sharing signed receipt through QR code
-    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000100001f40';
-    const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
-    const sig = ethUtil.ecsign(
-      hash,
-      Buffer.from(citizenAPriv.replace('0x', ''), 'hex'),
-    );
-    // citizen B signing transaction
-    await countryB.approve(earth.address, passportB, {from: citizenB});
-
-    // citizen B collaborates
-    await goellars.approve(earth.address, 1, {from: citizenB});
-
-    // sending transaction
-    const tx = await earth.trade(
-      passportA,           // uint256 passportA,
-      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
-      `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
-      passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
-    ).should.be.fulfilled;
-
-    // check result
-    const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '16000000000000000000');
-    const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '8000000000000000');
-    const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '8000000000000000');
-    const passA = await countryA.readData(passportA);
-    assert.equal(passA, `0x${dataAfterColaborate}`);
+    assert.equal(passA, `0x${dataAfterDefect}`);
   });
 
   it('should allow to unlock', async () => {
