@@ -57,7 +57,10 @@ contract Earth {
     citizenA.co2 = lowCO2 * PASSPORT_FACTOR;
     // sender can up to a bound decide the size of the emission
     require(citizenA.co2 <= MAX_CO2_EMISSION, "invalid emission");
-    if (uint256(passDataAfter) - uint256(citizenA.dataBefore) == lowCO2) {
+    uint256 co2Locked = uint256(passDataAfter >> 32) - uint256(citizenA.dataBefore >> 32);
+    if (co2Locked > 0) {
+      require(co2Locked == 1, "incorrect signal");
+    } else {
       // if CO2locked unchanged, then consider defect by player 1
       lowCO2 = lowCO2 / LOW_TO_HIGH_FACTOR;
       citizenA.isDefect = true;
