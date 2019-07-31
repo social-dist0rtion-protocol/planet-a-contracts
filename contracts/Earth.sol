@@ -23,33 +23,13 @@ contract Earth {
   uint256 constant CO2_TO_GOELLARS_FACTOR = 1000;
   uint256 constant LOW_TO_HIGH_FACTOR = 4;
 
-  function getGoellars(bool isDefectA, bool isDefectB, uint256 lowCO2) internal view returns (uint256) {
-    if (isDefectA) {
-      if (isDefectB) {
-        return (lowCO2 / CO2_TO_GOELLARS_FACTOR);
-      } else {
-        return (lowCO2 / CO2_TO_GOELLARS_FACTOR) * LOW_TO_HIGH_FACTOR;
-      }
-    } else {
-      if (isDefectB) {
-        return (lowCO2 / CO2_TO_GOELLARS_FACTOR) * LOW_TO_HIGH_FACTOR;
-      } else {
-        return (lowCO2 / CO2_TO_GOELLARS_FACTOR);
-      }
-    }
+  struct Citizen {
+    address addr;
+    bool isDefect;
+    bytes32 dataBefore;
+    uint256 co2;
   }
 
-  function getCo2B(bool isDefectB, uint256 lowCO2) internal view returns (uint256) {
-    if (isDefectB) {
-      return lowCO2 * LOW_TO_HIGH_FACTOR;
-    } else {
-      return lowCO2;
-    }
-  }
-
-  // (CO2mintedBefore - CO2mintedAfter) = co2Amount
-  // (CO2lockedBefore - CO2lockedAfter) > 0 ? collaborate : defect
-  // 
   function trade(
     uint256 passportA,
     bytes32 passDataAfter, 
@@ -58,33 +38,50 @@ contract Earth {
     address countryAaddr,
     address countryBaddr
   ) public {
-    // calculate payout for A
-    // sender can up to a bound decide the size of the emission
     IERC1948 countryA = IERC1948(countryAaddr);
-    bytes32 passDataBefore = countryA.readData(passportA);
-    uint256 lowCO2 = uint256(uint32(uint256(passDataAfter)) - uint32(uint256(passDataBefore)));
-    bool isDefectA = false;
+    IERC1948 countryB = IERC1948(countryBaddr);
+    Citizen memory citizenA = Citizen({
+      addr: countryA.ownerOf(passportA),
+      isDefect: false,
+      dataBefore: countryA.readData(passportA),
+      co2: 0
+    });
+    Citizen memory citizenB = Citizen({
+      addr: countryB.ownerOf(passportB),
+      isDefect: false,
+      dataBefore: countryB.readData(passportB),
+      co2: 0
+    });
 
-    if ((uint256(passDataAfter) - uint256(passDataBefore) == lowCO2) {
+    IERC20 dai = IERC20(DAI);
+    IERC20 co2 = IERC20(CO2);
+
+    // calculate payout for A
+    uint256 lowCO2 = uint256(uint32(uint256(passDataAfter)) - uint32(uint256(citizenA.dataBefore)));
+    citizenA.co2 = lowCO2 * PASSPORT_FACTOR;
+    // sender can up to a bound decide the size of the emission
+    require(citizenA.co2 <= MAX_CO2_EMISSION, "invalid emission");
+    if (uint256(passDataAfter) - uint256(citizenA.dataBefore) == lowCO2) {
       // if CO2locked unchanged, then consider defect by player 1
       lowCO2 = lowCO2 / LOW_TO_HIGH_FACTOR;
-      isDefectA = true;
+      citizenA.isDefect = true;
     }
-
-    // pay out trade        
-    IERC20 dai = IERC20(DAI);
-    dai.transfer(countryA.ownerOf(passportA), getGoellars(isDefectA, isDefectB, lowCO2));
-    IERC1948 countryB = IERC1948(countryBaddr);
-    dai.transfer(countryB.ownerOf(passportB), getGoellars(isDefectA, isDefectB, lowCO2));
     
     // update passports
     countryA.writeDataByReceipt(passportA, passDataAfter, sigA);
-    bytes32 dataB = countryB.readData(passportB);
-    countryB.writeData(passportB, bytes32(uint256(dataB) + getCo2B(isDefectB, lowCO2)));
+    citizenB.isDefect = (dai.allowance(citizenB.addr, address(this)) == 0);
+    citizenB.co2 = (citizenB.isDefect) ? lowCO2 * LOW_TO_HIGH_FACTOR : lowCO2;
+    countryB.writeData(passportB, bytes32(uint256(citizenB.dataBefore) + citizenB.co2));
+    citizenB.co2 *= PASSPORT_FACTOR;
+
+    // pay out trade
+    lowCO2 = lowCO2 * PASSPORT_FACTOR / CO2_TO_GOELLARS_FACTOR;
+    uint256 amount = (citizenA.isDefect) ? ((citizenB.isDefect) ? lowCO2 : lowCO2 * LOW_TO_HIGH_FACTOR) : ((citizenB.isDefect) ? lowCO2 * LOW_TO_HIGH_FACTOR : lowCO2);
+    dai.transfer(citizenA.addr, amount);
+    dai.transfer(citizenB.addr, amount);
 
     // emit CO2
-    IERC20 co2 = IERC20(CO2);
-    co2.transfer(AIR_ADDR, getCo2B(isDefectB, lowCO2) + uint256(uint32(uint256(passDataAfter)) - uint32(uint256(passDataBefore))));
+    co2.transfer(AIR_ADDR, citizenA.co2 + citizenB.co2);
   }
 
   // account used as game master.
