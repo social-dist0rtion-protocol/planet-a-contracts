@@ -24,7 +24,7 @@ contract('Earth Contract', (accounts) => {
   const citizenB = accounts[2];
   const air = accounts[3];
   const citizenAPriv = '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201';
-  const dataBefore = '0000000000000000000000000000000000000000000000000000000000000000';
+  const dataBefore = '0000000000000000000000000000000000000000000000000000000000000001';
   const passportA = 123;
   const passportB = 234;
   const totalCo2 = '10000000000000000000000';
@@ -40,6 +40,13 @@ contract('Earth Contract', (accounts) => {
     co2 = await SimpleToken.new(totalCo2);
     countryA = await ERC1948.new();
     countryB = await ERC1948.new();
+
+    // print passports for citizens
+    await countryA.mint(citizenA, passportA);
+    await countryA.writeData(passportA, `0x${dataBefore}`, {from: citizenA});
+    await countryB.mint(citizenB, passportB);
+    await countryB.writeData(passportB, `0x${dataBefore}`, {from: citizenB});
+
     originalByteCode = Earth._json.bytecode;
   });
 
@@ -62,12 +69,8 @@ contract('Earth Contract', (accounts) => {
     await goellars.transfer(earth.address, '500000000000000000000');
     await co2.transfer(earth.address, totalCo2);
 
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
     // citizen A sharing signed receipt through QR code
-    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000000001388';
+    const dataAfterColaborate = '00000000000000000000000000000000000000000000000000000000000000c9'; // 0.2 GigaTons
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -88,11 +91,11 @@ contract('Earth Contract', (accounts) => {
 
     // check result when citizen A collaborates and citizen B collaborates
     const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '10000000000000000000'); // low CO2 + low CO2 = 10 GigaTons
+    assert.equal(emission.toString(10), '400000000000000000'); // low CO2 + low CO2 = 0.4 GigaTons
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceA.toString(10), '6000000000000000'); // medium $ = 6 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceB.toString(10), '6000000000000000'); // medum $ = 6 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterColaborate}`);
   });
@@ -113,12 +116,8 @@ contract('Earth Contract', (accounts) => {
     await goellars.transfer(earth.address, '500000000000000000000');
     await co2.transfer(earth.address, totalCo2);
 
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
     // citizen A sharing signed receipt through QR code
-    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000000001388';
+    const dataAfterColaborate = '00000000000000000000000000000000000000000000000000000000000000c9'; // 0.2 GigaTons
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -142,9 +141,9 @@ contract('Earth Contract', (accounts) => {
 
     // check result when citizen A collaborates and citizen B defects
     const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '25000000000000000000'); // low CO2 + high CO2 = 25 GigaTons
+    assert.equal(emission.toString(10), '20200000000000000000'); // low CO2 + high CO2 = 20.2 GigaTons
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '20000000000000000'); // high $ = 20 cents
+    assert.equal(balanceA.toString(10), '2000000000000000'); // low $ = 2 cents
     const balanceB = await goellars.balanceOf(citizenB);
     assert.equal(balanceB.toString(10), '20000000000000000'); // high $ = 20 cents
     const passA = await countryA.readData(passportA);
@@ -166,12 +165,8 @@ contract('Earth Contract', (accounts) => {
     await goellars.transfer(earth.address, '500000000000000000000');
     await co2.transfer(earth.address, totalCo2);
 
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
     // citizen A sharing signed receipt through QR code
-    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000100004e20';
+    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000100004e21';
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterDefect, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -192,11 +187,11 @@ contract('Earth Contract', (accounts) => {
 
     // check result when citizen A defects and citizen B collaborates ?!?!?!
     const emission = await co2.balanceOf(air);
-    assert.equal(emission.toString(10), '25000000000000000000'); // high CO2 + low CO2 = 25 Gigatons
+    assert.equal(emission.toString(10), '40000000000000000000'); // high CO2 + high CO2 = 40 Gigatons
     const balanceA = await goellars.balanceOf(citizenA);
     assert.equal(balanceA.toString(10), '20000000000000000'); // high $ = 20 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '20000000000000000'); // high $ = 20 cents
+    assert.equal(balanceB.toString(10), '2000000000000000'); // low $ = 2 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterDefect}`);
   });
@@ -226,12 +221,8 @@ contract('Earth Contract', (accounts) => {
     await goellars.transfer(earth.address, totalGoe);
     await co2.transfer(earth.address, totalCo2);
 
-    // print passports for citizens
-    await countryA.mint(citizenA, passportA);
-    await countryB.mint(citizenB, passportB);
-
     // citizen A sharing signed receipt through QR code
-    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000100004e20';
+    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000100004e21';
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterDefect, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -257,9 +248,9 @@ contract('Earth Contract', (accounts) => {
     const emission = await co2.balanceOf(air);
     assert.equal(emission.toString(10), '40000000000000000000'); // high CO2 + high CO2 = 40 GigaTonnes
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceA.toString(10), '2000000000000000'); // low $ = 2 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceB.toString(10), '2000000000000000'); // low $ = 2 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterDefect}`);
   });

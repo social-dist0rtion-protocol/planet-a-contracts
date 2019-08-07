@@ -16,14 +16,31 @@ contract Earth {
   uint256 constant MAX_CO2_EMISSION = 25000000000000000000; // 25 gigatonnes
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
   
-  uint256 constant CO2_TO_GOELLARS_FACTOR = 1000;
-  uint256 constant LOW_TO_HIGH_FACTOR = 4;
+  uint256 constant CO2_TO_GOELLARS_FACTOR = 100;
+  uint256 constant LOW_TO_HIGH_FACTOR = 100;
 
   struct Citizen {
     address addr;
     bool isDefect;
     bytes32 dataBefore;
     uint256 co2;
+  }
+
+  function getCo2(uint256 low, Citizen memory me, Citizen memory other) internal pure returns (uint256 rv) {
+    low *= PASSPORT_FACTOR;
+    rv = low;
+    if (me.co2 > other.co2) {
+      rv = low * 10;
+    }
+    if (me.co2 == other.co2) {
+      if (me.co2 == low) {
+        rv = low * 3;
+      }
+      if (me.isDefect != other.isDefect) {
+        rv = (me.dataBefore == 0) ? low * 10 : low;
+      }
+    }
+    rv /= CO2_TO_GOELLARS_FACTOR;
   }
 
   function trade(
@@ -68,15 +85,14 @@ contract Earth {
     // update passports
     countryA.writeDataByReceipt(passportA, passDataAfter, sigA);
     citizenB.isDefect = (dai.allowance(citizenB.addr, address(this)) > 0);
-    citizenB.co2 = (citizenB.isDefect) ? lowCO2 * LOW_TO_HIGH_FACTOR : lowCO2;
+    citizenB.co2 = (citizenA.isDefect || citizenB.isDefect) ? lowCO2 * LOW_TO_HIGH_FACTOR : lowCO2;
     countryB.writeData(passportB, bytes32(uint256(citizenB.dataBefore) + citizenB.co2));
     citizenB.co2 *= PASSPORT_FACTOR;
+    citizenA.dataBefore = 0;
 
     // pay out trade
-    lowCO2 = lowCO2 * PASSPORT_FACTOR / CO2_TO_GOELLARS_FACTOR;
-    uint256 amount = (citizenA.isDefect) ? ((citizenB.isDefect) ? lowCO2 : lowCO2 * LOW_TO_HIGH_FACTOR) : ((citizenB.isDefect) ? lowCO2 * LOW_TO_HIGH_FACTOR : lowCO2);
-    dai.transfer(citizenA.addr, amount);
-    dai.transfer(citizenB.addr, amount);
+    dai.transfer(citizenA.addr, getCo2(lowCO2, citizenA, citizenB));
+    dai.transfer(citizenB.addr, getCo2(lowCO2, citizenB, citizenA));
 
     // emit CO2
     co2.transfer(AIR_ADDR, citizenA.co2 + citizenB.co2);
