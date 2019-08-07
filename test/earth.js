@@ -25,7 +25,6 @@ contract('Earth Contract', (accounts) => {
   const air = accounts[3];
   const citizenAPriv = '0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501201';
   const dataBefore = '0000000000000000000000000000000000000000000000000000000000000000';
-  const dataAfter = '0000000000000000000000000000000000000000000000000000000000001388';
   const passportA = 123;
   const passportB = 234;
   const totalCo2 = '10000000000000000000000';
@@ -68,7 +67,7 @@ contract('Earth Contract', (accounts) => {
     await countryB.mint(citizenB, passportB);
 
     // citizen A sharing signed receipt through QR code
-    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000100001388';
+    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000000001388';
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -76,9 +75,6 @@ contract('Earth Contract', (accounts) => {
     );
     // citizen B signing transaction
     await countryB.approve(earth.address, passportB, {from: citizenB});
-
-    // citizen B collaborates
-    await goellars.approve(earth.address, 1, {from: citizenB});
 
     // sending transaction
     const tx = await earth.trade(
@@ -122,7 +118,7 @@ contract('Earth Contract', (accounts) => {
     await countryB.mint(citizenB, passportB);
 
     // citizen A sharing signed receipt through QR code
-    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000100001388';
+    const dataAfterColaborate = '0000000000000000000000000000000000000000000000000000000000001388';
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterColaborate, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -130,6 +126,9 @@ contract('Earth Contract', (accounts) => {
     );
     // citizen B signing transaction
     await countryB.approve(earth.address, passportB, {from: citizenB});
+
+    // citizen B collaborates
+    await goellars.approve(earth.address, 1, {from: citizenB});
 
     // sending transaction
     const tx = await earth.trade(
@@ -172,7 +171,7 @@ contract('Earth Contract', (accounts) => {
     await countryB.mint(citizenB, passportB);
 
     // citizen A sharing signed receipt through QR code
-    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000000004e20';
+    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000100004e20';
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterDefect, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -180,9 +179,6 @@ contract('Earth Contract', (accounts) => {
     );
     // citizen B signing transaction
     await countryB.approve(earth.address, passportB, {from: citizenB});
-
-    // citizen B collaborates
-    await goellars.approve(earth.address, 1, {from: citizenB});
 
     // sending transaction
     const tx = await earth.trade(
@@ -235,7 +231,7 @@ contract('Earth Contract', (accounts) => {
     await countryB.mint(citizenB, passportB);
 
     // citizen A sharing signed receipt through QR code
-    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000000004e20';
+    const dataAfterDefect = '0000000000000000000000000000000000000000000000000000000100004e20';
     const hash = ethUtil.hashPersonalMessage(Buffer.from(dataBefore + dataAfterDefect, 'hex'));
     const sig = ethUtil.ecsign(
       hash,
@@ -243,6 +239,9 @@ contract('Earth Contract', (accounts) => {
     );
     // citizen B signing transaction
     await countryB.approve(earth.address, passportB, {from: citizenB});
+
+    // citizen B collaborates
+    await goellars.approve(earth.address, 1, {from: citizenB});
 
     // sending transaction
     const tx = await earth.trade(

@@ -60,15 +60,14 @@ contract Earth {
     uint256 co2Locked = uint256(passDataAfter >> 32) - uint256(citizenA.dataBefore >> 32);
     if (co2Locked > 0) {
       require(co2Locked == 1, "incorrect signal");
-    } else {
+      citizenA.isDefect = true;
       // if CO2locked unchanged, then consider defect by player 1
       lowCO2 = lowCO2 / LOW_TO_HIGH_FACTOR;
-      citizenA.isDefect = true;
     }
     
     // update passports
     countryA.writeDataByReceipt(passportA, passDataAfter, sigA);
-    citizenB.isDefect = (dai.allowance(citizenB.addr, address(this)) == 0);
+    citizenB.isDefect = (dai.allowance(citizenB.addr, address(this)) > 0);
     citizenB.co2 = (citizenB.isDefect) ? lowCO2 * LOW_TO_HIGH_FACTOR : lowCO2;
     countryB.writeData(passportB, bytes32(uint256(citizenB.dataBefore) + citizenB.co2));
     citizenB.co2 *= PASSPORT_FACTOR;
