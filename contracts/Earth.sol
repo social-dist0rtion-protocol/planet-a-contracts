@@ -27,7 +27,6 @@ contract Earth {
   }
 
   function getCo2(uint256 low, Citizen memory me, Citizen memory other) internal pure returns (uint256 rv) {
-    low *= PASSPORT_FACTOR;
     rv = low;
     if (me.co2 > other.co2) {
       rv = low * 10;
@@ -36,8 +35,8 @@ contract Earth {
       if (me.co2 == low) {
         rv = low * 3;
       }
-      if (me.isDefect != other.isDefect) {
-        rv = (me.dataBefore == 0) ? low * 10 : low;
+      if (me.isDefect != other.isDefect && me.dataBefore == 0) {
+        rv = low * 10;
       }
     }
     rv /= CO2_TO_GOELLARS_FACTOR;
@@ -77,9 +76,9 @@ contract Earth {
     uint256 co2Locked = uint256(passDataAfter >> 32) - uint256(citizenA.dataBefore >> 32);
     if (co2Locked > 0) {
       require(co2Locked == 1, "incorrect signal");
+      lowCO2 /= LOW_TO_HIGH_FACTOR;
+      // if CO2locked changed, then consider defect by player 1
       citizenA.isDefect = true;
-      // if CO2locked unchanged, then consider defect by player 1
-      lowCO2 = lowCO2 / LOW_TO_HIGH_FACTOR;
     }
     
     // update passports
@@ -89,6 +88,7 @@ contract Earth {
     countryB.writeData(passportB, bytes32(uint256(citizenB.dataBefore) + citizenB.co2));
     citizenB.co2 *= PASSPORT_FACTOR;
     citizenA.dataBefore = 0;
+    lowCO2 *= PASSPORT_FACTOR;
 
     // pay out trade
     dai.transfer(citizenA.addr, getCo2(lowCO2, citizenA, citizenB));
