@@ -62,10 +62,8 @@ contract Goellars is IERC20, MinterRole {
     uint256 amountToMint = 0;
     if (_balances[from] < value) {
       amountToMint = value.sub(_balances[from]);
-      if (amountToMint > 0) {
-        require(msg.sender == bridgeAddr, "pullAndMint only for bridge");
-        require(to == bridgeAddr, "pullAndMint only to bridge");
-      }
+      require(msg.sender == bridgeAddr, "pullAndMint only for bridge");
+      require(to == bridgeAddr, "pullAndMint only to bridge");
       _pullAndMint(from, msg.sender, amountToMint);
     }
     if (amountToMint < value) {
