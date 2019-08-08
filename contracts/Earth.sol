@@ -70,6 +70,7 @@ contract Earth {
 
     // calculate payout for A
     uint256 lowCO2 = uint256(uint32(uint256(passDataAfter)) - uint32(uint256(citizenA.dataBefore)));
+    require(lowCO2 > 0, "empty trade");
     citizenA.co2 = lowCO2 * PASSPORT_FACTOR;
     // sender can up to a bound decide the size of the emission
     require(citizenA.co2 <= MAX_CO2_EMISSION, "invalid emission");
