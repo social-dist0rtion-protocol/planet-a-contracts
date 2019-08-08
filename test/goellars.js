@@ -115,16 +115,14 @@ contract('Goellars', (accounts) => {
     assert.equal(await goellars.balanceOf(bob), 200);
   });
 
-  it('goellars transferFrom should work if approved', async () => {
+  it('goellars transferFrom should work for bridge if approved', async () => {
     // mock exit by mint, then burn
     await goellars.mint(alice, 200);
 
-    await goellars.transferFrom(alice, bob, 200, {from: bob}).should.be.rejectedWith(EVMRevert);
-    assert.equal(await goellars.balanceOf(alice), 200);
-    assert.equal(await goellars.balanceOf(bob), 0);
+    await goellars.transferFrom(alice, bob, 200, {from: bridge}).should.be.rejectedWith(EVMRevert);
 
-    await goellars.approve(bob, 200, {from: alice});
-    await goellars.transferFrom(alice, bob, 200, {from: bob}).should.be.fulfilled;
+    await goellars.approve(bridge, 200, {from: alice});
+    await goellars.transferFrom(alice, bob, 200, {from: bridge}).should.be.fulfilled;
     assert.equal(await goellars.balanceOf(alice), 0);
     assert.equal(await goellars.balanceOf(bob), 200);
   });
