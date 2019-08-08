@@ -28,7 +28,7 @@ contract Goellars is IERC20, MinterRole {
   // 2. goellars are minted in amount of DAI deposited
   // 3. goellars transfered to the Bridge
   function _pullAndMint(address from, address to, uint256 value) internal {
-    require(dai.transferFrom(from, address(this), value));
+    require(dai.transferFrom(from, address(this), value), "transferFrom failed");
     daiBalance[from] = daiBalance[from].add(value);
     _mint(to, value);
   }
@@ -69,10 +69,6 @@ contract Goellars is IERC20, MinterRole {
       _pullAndMint(from, msg.sender, amountToMint);
     }
     if (amountToMint < value) {
-      if (msg.sender == bridgeAddr || to == bridgeAddr) {
-        require(msg.sender == bridgeAddr, "transferFrom only by bridge to bridge");
-        require(to == bridgeAddr, "transferFrom only by bridge to bridge 2");
-      }
       _transferFrom(from, to, value.sub(amountToMint));
     }
     return true;
@@ -81,7 +77,7 @@ contract Goellars is IERC20, MinterRole {
   function _burn(address owner) internal {
     uint256 amount = _balances[owner];
     if (!isMinter(owner)) {
-      require(daiBalance[owner] > 0);
+      require(daiBalance[owner] > 0, "no previous dai collateralized");
       if (daiBalance[owner] < amount) {
         amount = daiBalance[owner];
       }
@@ -165,7 +161,7 @@ contract Goellars is IERC20, MinterRole {
    * @param value The amount of tokens to be spent.
    */
   function approve(address spender, uint256 value) public returns (bool) {
-    require(spender != address(0));
+    require(spender != address(0), "spender not valid");
 
     _allowed[msg.sender][spender] = value;
     emit Approval(msg.sender, spender, value);
@@ -183,7 +179,7 @@ contract Goellars is IERC20, MinterRole {
    * @param addedValue The amount of tokens to increase the allowance by.
    */
   function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-    require(spender != address(0));
+    require(spender != address(0), "spender not valid");
 
     _allowed[msg.sender][spender] = _allowed[msg.sender][spender].add(addedValue);
     emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
@@ -201,7 +197,7 @@ contract Goellars is IERC20, MinterRole {
    * @param subtractedValue The amount of tokens to decrease the allowance by.
    */
   function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-    require(spender != address(0));
+    require(spender != address(0), "spender not valid");
 
     _allowed[msg.sender][spender] = _allowed[msg.sender][spender].sub(subtractedValue);
     emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
@@ -215,7 +211,7 @@ contract Goellars is IERC20, MinterRole {
   * @param value The amount to be transferred.
   */
   function _transfer(address from, address to, uint256 value) internal {
-    require(to != address(0));
+    require(to != address(0), "to not valid");
 
     _balances[from] = _balances[from].sub(value);
     _balances[to] = _balances[to].add(value);
@@ -230,7 +226,7 @@ contract Goellars is IERC20, MinterRole {
    * @param value The amount that will be created.
    */
   function _mint(address account, uint256 value) internal {
-    require(account != address(0));
+    require(account != address(0), "account not valid");
 
     _totalSupply = _totalSupply.add(value);
     _balances[account] = _balances[account].add(value);
@@ -244,7 +240,7 @@ contract Goellars is IERC20, MinterRole {
    * @param value The amount that will be burnt.
    */
   function _burn(address account, uint256 value) internal {
-    require(account != address(0));
+    require(account != address(0), "account not valid");
 
     _totalSupply = _totalSupply.sub(value);
     _balances[account] = _balances[account].sub(value);
