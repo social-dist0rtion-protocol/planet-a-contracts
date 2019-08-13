@@ -19,6 +19,13 @@ contract Earth {
   uint256 constant CO2_TO_GOELLARS_FACTOR = 100;
   uint256 constant LOW_TO_HIGH_FACTOR = 100;
 
+  event NewTrade(
+    address indexed citizenA,
+    address indexed citizenB,
+    bool isDefectA,
+    bool isDefectB
+  );
+
   struct Citizen {
     address addr;
     bool isDefect;
@@ -64,6 +71,7 @@ contract Earth {
       dataBefore: countryB.readData(passportB),
       co2: 0
     });
+    require(citizenA.addr != citizenB.addr, "can not trade with oneself");
 
     IERC20 dai = IERC20(DAI_ADDR);
     IERC20 co2 = IERC20(CO2_ADDR);
@@ -97,6 +105,8 @@ contract Earth {
 
     // emit CO2
     co2.transfer(AIR_ADDR, citizenA.co2 + citizenB.co2);
+    // event
+    emit NewTrade(citizenA.addr, citizenB.addr, citizenA.isDefect, citizenB.isDefect);
   }
 
   // account used as game master.
