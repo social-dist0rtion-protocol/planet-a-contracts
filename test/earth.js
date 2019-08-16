@@ -314,4 +314,27 @@ contract('Earth Contract', (accounts) => {
     const tx = await earth.unlockCO2(123, sig.v, sig.r, sig.s).should.be.fulfilled;    
   });
 
+
+  it('should allow to consolidate', async () => {
+    // deploy earth
+    let tmp = Earth._json.bytecode;
+    // replace token address placeholder to real token address
+    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
+    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
+    tmp = replaceAll(tmp, '4561111111111111111111111111111111111456', air);
+    tmp = replaceAll(tmp, '5671111111111111111111111111111111111567', citizenA);
+    Earth._json.bytecode = tmp;
+    const earth = await Earth.new();
+
+    await co2.transfer(earth.address, totalCo2);
+
+    const buf = Buffer.alloc(32, 0);
+    Buffer.from(earth.address.replace('0x', ''), 'hex').copy(buf);
+    //buf.writeUInt32BE(123, 8);
+    const sig = ethUtil.ecsign(buf, Buffer.from(citizenAPriv.replace('0x', '') , 'hex'));
+
+    // sending transaction
+    const tx = await earth.consolidate(sig.v, sig.r, sig.s).should.be.fulfilled;    
+  });
+
 });
