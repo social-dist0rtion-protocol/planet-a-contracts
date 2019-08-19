@@ -82,20 +82,20 @@ contract('Earth Contract', (accounts) => {
     // sending transaction
     const tx = await earth.trade(
       passportA,           // uint256 passportA,
-      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
+      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter,
       `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
       passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
+      countryA.address,    // NFT contract
+      countryB.address,    // NFT contract
     ).should.be.fulfilled;
 
     // check result when citizen A collaborates and citizen B collaborates
     const emission = await co2.balanceOf(air);
     assert.equal(emission.toString(10), '2000000000000000'); // low CO2 + low CO2 = 2 MegaTons
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '15000000000000000'); // medium $ = 15 cents
+    assert.equal(balanceA.toString(10), '150000000000000000'); // medium $ = 15 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '15000000000000000'); // medum $ = 15 cents
+    assert.equal(balanceB.toString(10), '150000000000000000'); // medium $ = 15 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterColaborate}`);
   });
@@ -130,11 +130,11 @@ contract('Earth Contract', (accounts) => {
     // sending transaction
     const tx = await earth.trade(
       passportA,           // uint256 passportA,
-      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
+      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter,
       `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
       passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
+      countryA.address,    // NFT contract
+      countryB.address,    // NFT contract
     ).should.be.rejectedWith(EVMRevert);
   });
 
@@ -170,20 +170,20 @@ contract('Earth Contract', (accounts) => {
     // sending transaction
     const tx = await earth.trade(
       passportA,           // uint256 passportA,
-      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter, 
+      `0x${dataAfterColaborate}`,      // bytes32 passDataAfter,
       `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
       passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
+      countryA.address,    // NFT contract
+      countryB.address,    // NFT contract
     ).should.be.fulfilled;
 
     // check result when citizen A collaborates and citizen B defects
     const emission = await co2.balanceOf(air);
     assert.equal(emission.toString(10), '101000000000000000'); // low CO2 + high CO2 = 101 MegaTons
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceA.toString(10), '50000000000000000'); // low $ = 5 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '50000000000000000'); // high $ = 50 cents
+    assert.equal(balanceB.toString(10), '500000000000000000'); // high $ = 50 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterColaborate}`);
   });
@@ -216,20 +216,20 @@ contract('Earth Contract', (accounts) => {
     // sending transaction
     const tx = await earth.trade(
       passportA,           // uint256 passportA,
-      `0x${dataAfterDefect}`,      // bytes32 passDataAfter, 
+      `0x${dataAfterDefect}`,      // bytes32 passDataAfter,
       `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
       passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
+      countryA.address,    // NFT contract
+      countryB.address,    // NFT contract
     ).should.be.fulfilled;
 
     // check result when citizen A defects and citizen B collaborates ?!?!?!
     const emission = await co2.balanceOf(air);
     assert.equal(emission.toString(10), '200000000000000000'); // high CO2 + high CO2 = 200 Megatons
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '50000000000000000'); // high $ = 50 cents
+    assert.equal(balanceA.toString(10), '500000000000000000'); // high $ = 50 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceB.toString(10), '50000000000000000'); // low $ = 5 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterDefect}`);
   });
@@ -275,20 +275,20 @@ contract('Earth Contract', (accounts) => {
     // sending transaction
     const tx = await earth.trade(
       passportA,           // uint256 passportA,
-      `0x${dataAfterDefect}`,      // bytes32 passDataAfter, 
+      `0x${dataAfterDefect}`,      // bytes32 passDataAfter,
       `0x${sig.r.toString('hex')}${sig.s.toString('hex')}${sig.v.toString(16)}`, // sig
       passportB,           // uint256 passportB,
-      countryA.address,    // NFT contract 
-      countryB.address,    // NFT contract 
+      countryA.address,    // NFT contract
+      countryB.address,    // NFT contract
     ).should.be.fulfilled;
 
     // check result when citizen A defects and citizen B defects
     const emission = await co2.balanceOf(air);
     assert.equal(emission.toString(10), '200000000000000000'); // high CO2 + high CO2 = 200 MegaTonnes
     const balanceA = await goellars.balanceOf(citizenA);
-    assert.equal(balanceA.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceA.toString(10), '50000000000000000'); // low $ = 5 cents
     const balanceB = await goellars.balanceOf(citizenB);
-    assert.equal(balanceB.toString(10), '5000000000000000'); // low $ = 5 cents
+    assert.equal(balanceB.toString(10), '50000000000000000'); // low $ = 5 cents
     const passA = await countryA.readData(passportA);
     assert.equal(passA, `0x${dataAfterDefect}`);
   });
@@ -311,7 +311,7 @@ contract('Earth Contract', (accounts) => {
     const sig = ethUtil.ecsign(buf, Buffer.from(citizenAPriv.replace('0x', '') , 'hex'));
 
     // sending transaction
-    const tx = await earth.unlockCO2(123, sig.v, sig.r, sig.s).should.be.fulfilled;    
+    const tx = await earth.unlockCO2(123, sig.v, sig.r, sig.s).should.be.fulfilled;
   });
 
 
@@ -334,7 +334,7 @@ contract('Earth Contract', (accounts) => {
     const sig = ethUtil.ecsign(buf, Buffer.from(citizenAPriv.replace('0x', '') , 'hex'));
 
     // sending transaction
-    const tx = await earth.consolidate(sig.v, sig.r, sig.s).should.be.fulfilled;    
+    const tx = await earth.consolidate(sig.v, sig.r, sig.s).should.be.fulfilled;
   });
 
 });
