@@ -16,7 +16,7 @@ contract Earth {
   uint256 constant MAX_CO2_EMISSION = 25000000000000000000; // 25 gigatonnes
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
   
-  uint256 constant CO2_TO_GOELLARS_FACTOR = 100;
+  uint256 constant CO2_TO_GOELLARS_FACTOR = 5;
   uint256 constant LOW_TO_HIGH_FACTOR = 100;
 
   event NewTrade(
@@ -46,7 +46,7 @@ contract Earth {
         rv = low * 10;
       }
     }
-    rv /= CO2_TO_GOELLARS_FACTOR;
+    rv *= CO2_TO_GOELLARS_FACTOR;
   }
 
   function trade(

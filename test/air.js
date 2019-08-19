@@ -72,12 +72,12 @@ contract('Air Contract', (accounts) => {
 
     // check result
     const locked = await co2.balanceOf(earth);
-    assert.equal(locked.toString(10), '16000000000000000000');
+    assert.equal(locked.toString(10), '2000000000000000000');
     const balanceAir = await goellars.balanceOf(air.address);
     assert.equal(balanceAir.toString(10), '1000000000000000000');
     const passA = await country.readData(passportA);
     const pl = new PassportLib(before);
-    assert.equal(passA, pl.updateLockedCo2(16000));
+    assert.equal(passA, pl.updateLockedCo2(2000));
   });
 
 

@@ -13,7 +13,7 @@ contract Air {
   bytes32 constant LOCK_MAP = 0xffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffff;
   address constant CO2_ADDR = 0x1231111111111111111111111111111111111123;
   address constant GOELLARS_ADDR = 0x2341111111111111111111111111111111111234;
-  uint256 constant CO2_PER_GEOLLAR = 16;
+  uint256 constant CO2_PER_GEOLLAR = 2;
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
 
   function getLocked(bytes32 data) internal pure returns (uint32) {
