@@ -10,7 +10,7 @@ import "./IERC1948.sol";
 
 contract Earth {
   address constant CO2_ADDR = 0x1231111111111111111111111111111111111123;
-  address constant DAI_ADDR = 0x2341111111111111111111111111111111111234;
+  address constant GOELLARS_ADDR = 0x2341111111111111111111111111111111111234;
   address constant AIR_ADDR = 0x4561111111111111111111111111111111111456;
 
   uint256 constant MAX_CO2_EMISSION = 25000000000000000000; // 25 gigatonnes
@@ -73,7 +73,7 @@ contract Earth {
     });
     require(citizenA.addr != citizenB.addr, "can not trade with oneself");
 
-    IERC20 dai = IERC20(DAI_ADDR);
+    IERC20 dai = IERC20(GOELLARS_ADDR);
     IERC20 co2 = IERC20(CO2_ADDR);
 
     // calculate payout for A
@@ -122,8 +122,16 @@ contract Earth {
   // used to combine multiple contract UTXOs into one.
   function consolidate(uint8 v, bytes32 r, bytes32 s) public {
     require(ecrecover(bytes32(bytes20(address(this))), v, r, s) == GAME_MASTER, "signer does not match");
-    // lock CO2
+    uint256 bal;
     IERC20 co2 = IERC20(CO2_ADDR);
-    co2.transfer(address(this), co2.balanceOf(address(this)));
+    IERC20 goellars = IERC20(GOELLARS_ADDR);
+    bal = co2.balanceOf(address(this));
+    if (bal > 0) {
+      co2.transfer(address(this), bal);
+    }
+    bal = goellars.balanceOf(address(this));
+    if (bal > 0) {
+      goellars.transfer(address(this), bal);
+    }
   }
 }

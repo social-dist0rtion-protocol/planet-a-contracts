@@ -7,14 +7,12 @@
 pragma solidity ^0.5.2;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./IERC1948.sol";
-import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 contract Air {
-  using ECDSA for bytes32;
 
   bytes32 constant LOCK_MAP = 0xffffffffffffffffffffffffffffffffffffffffffffffff00000000ffffffff;
-  address constant CO2 = 0x1231111111111111111111111111111111111123;
-  address constant DAI = 0x2341111111111111111111111111111111111234;
+  address constant CO2_ADDR = 0x1231111111111111111111111111111111111123;
+  address constant GOELLARS_ADDR = 0x2341111111111111111111111111111111111234;
   uint256 constant CO2_PER_GEOLLAR = 16;
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
 
@@ -41,7 +39,7 @@ contract Air {
     address signer = country.ownerOf(passport);
 
     // pull payment
-    IERC20 dai = IERC20(DAI);
+    IERC20 dai = IERC20(GOELLARS_ADDR);
     dai.transferFrom(signer, address(this), goellarAmount);
     
     // update passports
@@ -50,29 +48,33 @@ contract Air {
     country.writeData(passport, addLocked(data, uint32(goellarAmount * CO2_PER_GEOLLAR / PASSPORT_FACTOR)));
 
     // lock CO2
-    IERC20 co2 = IERC20(CO2);
+    IERC20 co2 = IERC20(CO2_ADDR);
     co2.transfer(earthAddr, goellarAmount * CO2_PER_GEOLLAR);
   }
 
   // account used as game master.
   address constant GAME_MASTER = 0x5671111111111111111111111111111111111567;
 
-  // used to model natural reduction of CO2 if below run-away point
-  function lockCO2(uint256 amount, address earthAddr, bytes memory sig) public {
-    address signer = bytes32(bytes20(address(this))).recover(sig);
-    require(signer == GAME_MASTER, "signer does not match");
-    // lock CO2
-    IERC20 co2 = IERC20(CO2);
-    co2.transfer(earthAddr, amount);
+  // used to model natural reduction of CO2 if below run-away point.
+  function lockCO2(uint256 amount, uint8 v, bytes32 r, bytes32 s, address earthAddr) public {
+    require(ecrecover(bytes32(uint256(uint160(address(this))) | amount << 160), v, r, s) == GAME_MASTER, "signer does not match");
+    // unlock CO2
+    IERC20(CO2_ADDR).transfer(earthAddr, amount);
   }
 
   // used to combine multiple contract UTXOs into one.
-  function consolidate(bytes memory sig) public {
-    address signer = bytes32(bytes20(address(this))).recover(sig);
-    require(signer == GAME_MASTER, "signer does not match");
-    // lock CO2
-    IERC20 co2 = IERC20(CO2);
-    uint256 amount = co2.balanceOf(address(this));
-    co2.transfer(address(this), amount);
+  function consolidate(uint8 v, bytes32 r, bytes32 s) public {
+    require(ecrecover(bytes32(bytes20(address(this))), v, r, s) == GAME_MASTER, "signer does not match");
+    uint256 bal;
+    IERC20 co2 = IERC20(CO2_ADDR);
+    IERC20 goellars = IERC20(GOELLARS_ADDR);
+    bal = co2.balanceOf(address(this));
+    if (bal > 0) {
+      co2.transfer(address(this), bal);
+    }
+    bal = goellars.balanceOf(address(this));
+    if (bal > 0) {
+      goellars.transfer(address(this), bal);
+    }
   }
 }
