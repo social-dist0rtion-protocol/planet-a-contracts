@@ -115,7 +115,7 @@ contract('Air Contract', (accounts) => {
     await co2.transfer(air.address, totalCo2);
 
     const buf = Buffer.alloc(32, 0);
-    Buffer.from(air.address.replace('0x', ''), 'hex').copy(buf);
+    Buffer.from(air.address.replace('0x', ''), 'hex').copy(buf, 12, 0, 20);
     //buf.writeUInt32BE(123, 8);
     const sig = ethUtil.ecsign(buf, Buffer.from(citizenAPriv.replace('0x', '') , 'hex'));
 
