@@ -13,10 +13,10 @@ contract Earth {
   address constant GOELLARS_ADDR = 0x2341111111111111111111111111111111111234;
   address constant AIR_ADDR = 0x4561111111111111111111111111111111111456;
 
-  uint256 constant MAX_CO2_EMISSION = 25000000000000000000; // 25 gigatonnes
+  uint256 constant MAX_CO2_EMISSION = 250000000000000000; // 250 megatones
   uint256 constant PASSPORT_FACTOR = 10**15;  // needed to save bytes in passport
-  
-  uint256 constant CO2_TO_GOELLARS_FACTOR = 100;
+
+  uint256 constant CO2_TO_GOELLARS_FACTOR = 50;
   uint256 constant LOW_TO_HIGH_FACTOR = 100;
 
   event NewTrade(
@@ -46,12 +46,12 @@ contract Earth {
         rv = low * 10;
       }
     }
-    rv /= CO2_TO_GOELLARS_FACTOR;
+    rv *= CO2_TO_GOELLARS_FACTOR;
   }
 
   function trade(
     uint256 passportA,
-    bytes32 passDataAfter, 
+    bytes32 passDataAfter,
     bytes memory sigA,
     uint256 passportB,
     address countryAaddr,
@@ -89,7 +89,7 @@ contract Earth {
       // if CO2locked changed, then consider defect by player 1
       citizenA.isDefect = true;
     }
-    
+
     // update passports
     countryA.writeDataByReceipt(passportA, passDataAfter, sigA);
     citizenB.isDefect = (dai.allowance(citizenB.addr, address(this)) > 0);
