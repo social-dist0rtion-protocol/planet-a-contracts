@@ -106,8 +106,6 @@ contract('Air Contract', (accounts) => {
     // deploy earth
     let tmp = Air._json.bytecode;
     // replace token address placeholder to real token address
-    tmp = replaceAll(tmp, '1231111111111111111111111111111111111123', co2.address);
-    tmp = replaceAll(tmp, '2341111111111111111111111111111111111234', goellars.address);
     tmp = replaceAll(tmp, '5671111111111111111111111111111111111567', citizenA);
     Air._json.bytecode = tmp;
     const air = await Air.new();
@@ -115,12 +113,12 @@ contract('Air Contract', (accounts) => {
     await co2.transfer(air.address, totalCo2);
 
     const buf = Buffer.alloc(32, 0);
-    Buffer.from(air.address.replace('0x', ''), 'hex').copy(buf);
+    Buffer.from(air.address.replace('0x', ''), 'hex').copy(buf, 12, 0, 20);
     //buf.writeUInt32BE(123, 8);
     const sig = ethUtil.ecsign(buf, Buffer.from(citizenAPriv.replace('0x', '') , 'hex'));
 
     // sending transaction
-    const tx = await air.consolidate(sig.v, sig.r, sig.s).should.be.fulfilled;    
+    const tx = await air.consolidate(co2.address, sig.v, sig.r, sig.s).should.be.fulfilled;    
   });
 
 });

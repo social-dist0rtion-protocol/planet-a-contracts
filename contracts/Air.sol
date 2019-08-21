@@ -63,18 +63,9 @@ contract Air {
   }
 
   // used to combine multiple contract UTXOs into one.
-  function consolidate(uint8 v, bytes32 r, bytes32 s) public {
-    require(ecrecover(bytes32(bytes20(address(this))), v, r, s) == GAME_MASTER, "signer does not match");
-    uint256 bal;
-    IERC20 co2 = IERC20(CO2_ADDR);
-    IERC20 goellars = IERC20(GOELLARS_ADDR);
-    bal = co2.balanceOf(address(this));
-    if (bal > 0) {
-      co2.transfer(address(this), bal);
-    }
-    bal = goellars.balanceOf(address(this));
-    if (bal > 0) {
-      goellars.transfer(address(this), bal);
-    }
+  function consolidate(address token, uint8 v, bytes32 r, bytes32 s) public {
+    require(ecrecover(bytes32(uint256(uint160(address(this)))), v, r, s) == GAME_MASTER, "signer does not match");
+    IERC20 erc20 = IERC20(token);
+    erc20.transfer(address(this), erc20.balanceOf(address(this)));
   }
 }
