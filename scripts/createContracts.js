@@ -13,7 +13,7 @@ const earthOutFile = path.join(outdir, "Earth.json");
 
 const testnetCO2 = "0xF64fFBC4A69631D327590f4151B79816a193a8c6";
 const testnetGOL = "0x1f89Fb2199220a350287B162B9D0A330A2D2eFAD";
-const gameMaster = "0xaf0939af286A35DBfab7DEd7c777A5F6E8BE26A8";
+const gameMaster = "0x0d56caf1ccb9eddf27423a1d0f8960554e7bc9d5"; // shared with SDP peeps
 
 const replaceAll = (str, find, replace) =>
   str.replace(new RegExp(find, "g"), replace.replace("0x", "").toLowerCase());
