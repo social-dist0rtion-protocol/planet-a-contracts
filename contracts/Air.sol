@@ -62,9 +62,41 @@ contract Air {
     IERC20(CO2_ADDR).transfer(earthAddr, amount);
   }
 
+
+  function safer_ecrecover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal returns (bool, address) {
+    // We do our own memory management here. Solidity uses memory offset
+    // 0x40 to store the current end of memory. We write past it (as
+    // writes are memory extensions), but don't update the offset so
+    // Solidity will reuse it. The memory used here is only needed for
+    // this context.
+
+    // FIXME: inline assembly can't access return values
+    bool ret;
+    address addr;
+
+    assembly {
+      let size := mload(0x40)
+      mstore(size, hash)
+      mstore(add(size, 32), v)
+      mstore(add(size, 64), r)
+      mstore(add(size, 96), s)
+
+      // NOTE: we can reuse the request memory because we deal with
+      //       the return code
+      ret := call(3000, 1, 0, size, 128, size, 32)
+      addr := mload(size)
+    }
+
+    return (ret, addr);
+  }
+
   // used to combine multiple contract UTXOs into one.
   function consolidate(address token, uint8 v, bytes32 r, bytes32 s) public {
-    require(ecrecover(bytes32(uint256(uint160(address(this)))), v, r, s) == GAME_MASTER, "signer does not match");
+    bool success;
+    address signer;
+    (success, signer) = safer_ecrecover(bytes32(uint256(uint160(address(this)))), v, r, s);
+    require(success == true, "recover failed");
+    require(signer == GAME_MASTER, "signer does not match");
     IERC20 erc20 = IERC20(token);
     erc20.transfer(address(this), erc20.balanceOf(address(this)));
   }
