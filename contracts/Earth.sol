@@ -112,13 +112,6 @@ contract Earth {
   // account used as game master.
   address constant GAME_MASTER = 0x5671111111111111111111111111111111111567;
 
-  // used to model natural increase of CO2 if above run-away point.
-  function unlockCO2(uint256 amount, uint8 v, bytes32 r, bytes32 s) public {
-    require(ecrecover(bytes32(uint256(uint160(address(this))) | amount << 160), v, r, s) == GAME_MASTER, "signer does not match");
-    // unlock CO2
-    IERC20(CO2_ADDR).transfer(AIR_ADDR, amount);
-  }
-
   function safer_ecrecover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal returns (bool, address) {
     // We do our own memory management here. Solidity uses memory offset
     // 0x40 to store the current end of memory. We write past it (as
@@ -145,6 +138,18 @@ contract Earth {
 
     return (ret, addr);
   }
+
+  // used to model natural increase of CO2 if above run-away point.
+  function unlockCO2(uint256 amount, uint8 v, bytes32 r, bytes32 s) public {
+    bool success;
+    address signer;
+    (success, signer) = safer_ecrecover(bytes32(uint256(uint160(address(this))) | amount << 160), v, r, s);
+    require(success == true, "recover failed");
+    require(signer == GAME_MASTER, "signer does not match");
+    // unlock CO2
+    IERC20(CO2_ADDR).transfer(AIR_ADDR, amount);
+  }
+
 
   // used to combine multiple contract UTXOs into one.
   function consolidate(address token, uint8 v, bytes32 r, bytes32 s) public {
